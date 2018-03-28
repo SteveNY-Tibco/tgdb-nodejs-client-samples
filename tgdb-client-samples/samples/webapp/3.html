@@ -1,0 +1,62 @@
+<!--This is the overlay-->
+<div id="mySidenav" class="sidenav">
+  <p> Stock Price Time Series: <br>Querying Large Data </p>
+  <p> With time series data, we can create relationships between subsets of time.  A specific year can be divided into months, and the months can be divided to days. </p>
+  <img src="./image/TS-graph.png" width=400px">
+  <p> Within the graph database, we can create the relationship between a year and its months through edges, and the same for months to days. </p>  
+  <p> This allows us to create powerful queries with a variety of relationship groups and allows us to traverse them to build applications. </p>	
+  <p> In this demo, when you select a specific time frame, our database is queried for an object corresponding to the time frame, and we traverse its relationships to uncover the data to display. </p>	
+  <p> Simply traverse, no joins necessary! </p>
+</div>
+<p style="font-size:20px;cursor:pointer;" onclick="toggleNav()" id="overlayButton">A<br>b<br>o<br>u<br>t</p>
+<!--This is the overlay-->
+<div ng-controller="ScatterplotController as scatterplot">
+    <div class=row>
+	    <div class="12u">
+	    	<br>
+    		<select id="symbol-select" ng-model="symbol" ng-init="symbol='DIS'" ng-change=scatterplot.changedSelection()>
+					<option>[ticker symbol]</option>
+					<option>DIS</option>
+					<option>KO</option>
+					<option>APPL</option>
+					<option>AMZN</option>
+			</select>
+			<select id="year-select" ng-model="year" ng-init="year='2014'" ng-change=scatterplot.changedSelection()>
+					<option>[Year]</option>
+					<option>2014</option>
+					<option>2015</option>
+					<option>2016</option>
+			</select>
+			<select id="month-select" ng-model="month" ng-init="month='[Month]'" ng-change=scatterplot.changedSelection() >
+					<option>[Month]</option>
+					<option>1</option>
+					<option>2</option>
+					<option>3</option>
+					<option>4</option>
+					<option>5</option>
+					<option>6</option>
+					<option>7</option>
+					<option>8</option>
+					<option>9</option>
+					<option>10</option>
+					<option>11</option>
+					<option>12</option>
+			</select>
+    		<select id="value-select" ng-model="value" ng-init="value='openprice'" ng-change=scatterplot.changedSelection()>
+					<option value="[Value]">[Value]</option>
+					<option value="openprice">Open</option>
+					<option value="closeprice">Close</option>
+					<option value="lowprice">Low</option>
+					<option value="highprice">High</option>
+					<option value="tradevolume">Volume</option>
+			</select>
+			<br><br>
+			<div class="demo-label">Time Series Visualization</div>
+		</div>
+	</div>
+    <div class=main-row>
+    	<div class="8u">
+			<div id="scatterplot"></div>
+		</div>
+	</div>
+</div>

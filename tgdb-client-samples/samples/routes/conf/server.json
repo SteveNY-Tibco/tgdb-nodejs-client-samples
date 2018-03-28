@@ -1,0 +1,14 @@
+{
+  "serviceLocations" : [
+    {"ip" : "127.0.0.1", "port" : "8080"},
+    {"ip" : "192.168.1.8", "port" : "8080"}
+  ],
+  
+  "dataSources" : {
+    "routes" : {
+      "url"  : "tcp://napoleon@192.168.1.200:8222", 
+      "user" : "scott", 
+      "pwd"  : "scott"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+<section class = "fullwidth">
+  <div class="row">
+    <div class="columns">
+
+      <div class="pane-node-field-description">
+          <h2 class="hp">TIBCO® Graph Database</h2>
+          <p class="hp">Translytical database that transforms&nbsp;a complex web of dynamic data into meaningful,&nbsp;comprehensible and traversable&nbsp;relationships delivered at the speed of transactions.</p>
+      </div>
+
+      <a class="wiki" target="_blank" href="https://community.tibco.com/wiki/tibcor-graph-database-wiki">Wiki</a>
+
+      <div class="pane-node-field-hero-image">
+        <a href="https://community.tibco.com/wiki/tibcor-graph-database-wiki" title="Wiki" target="_blank">
+            <img src="image/grapgdb.png" height="276" width="371">
+        </a>
+      </div>
+    </div>
+  </div>
+</section>  
+
+<div ng-controller="CommunityPanelController as cpanel">
+  <div class="quicktabs-centered">
+    <div class="pane-content">
+      <div class="quicktabs-wrapper">
+        <div class="item-list">
+			<ul class="quicktabs-tabs">
+				<li ng-class="{'active':cpanel.isSelected(1)}"><a href ng-click="cpanel.select(1)" class="active, hp" ng-class="{'current-page-item':cpanel.isSelected(1)}">Overview</a></li>
+				<li ng-class="{'active':cpanel.isSelected(2)}"><a href ng-click="cpanel.select(2)" class="active, hp" ng-class="{'current-page-item':cpanel.isSelected(2)}">Releases</a></li>
+				<li ng-class="{'active':cpanel.isSelected(3)}"><a href ng-click="cpanel.select(3)" class="active, hp" ng-class="{'current-page-item':cpanel.isSelected(3)}">Reviews</a></li>
+				<li ng-class="{'active':cpanel.isSelected(4)}"><a href ng-click="cpanel.select(4)" class="active, hp" ng-class="{'current-page-item':cpanel.isSelected(4)}">Reference Info</a></li>
+			</ul>
+        </div>
+     	<div id="content">
+			<div class="cpanel" ng-if="cpanel.isSelected(1)">
+				<div active-community-panel tab="1"></div>
+			</div>
+			<div class="cpanel" ng-if="cpanel.isSelected(2)">
+				<div active-community-panel tab="2"></div>
+			</div>
+			<div class="cpanel" ng-if="cpanel.isSelected(3)">
+				<div active-community-panel tab="3"></div>
+			</div>
+			<div class="cpanel" ng-if="cpanel.isSelected(4)">
+				<div active-community-panel tab="4"></div>
+			</div>
+		</div>
+      </div>
+    </div>
+  </div>
+</div>

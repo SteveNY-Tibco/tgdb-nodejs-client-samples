@@ -1,0 +1,97 @@
+<!--This is the overlay-->
+<div id="mySidenav" class="sidenav">
+  <p> Stem Cell Database: <br> Discovering Value from Relationships	</p>
+  <p> New discoveries can be found through analyzing relationships.  TIBCO Graph DB has the ability to draw relationships out for users to discover correlations between data points or groups.</p>
+  <p> In this demo, we have gathered stem cell protein IDs and correlation indexes.  The correlation indexes shows the probability of one gene ID affecting another.</p>
+  <p> With this visualization, we can extract more value from the dataset by discovering distant relationships.</p>
+</div>
+<p style="font-size:20px;cursor:pointer;" onclick="toggleNav()" id="overlayButton">A<br>b<br>o<br>u<br>t</p>
+<!--This is the overlay-->
+
+<div class="5grid" ng-controller="DualGraphController as dualGraph">
+	<br>
+	<div class="row">
+	   <div class="6u-first">
+		    &nbsp;&nbsp;
+		    Select Stem Cell to Focus by Symbol:
+			<select name="human-gene-select" id="human-gene-select" ng-model="dummy1" ng-change="dualGraph.selectHumanGene()">
+					<option value="{{dualGraph.selectedGeneSymbo}}" selected>{{dualGraph.selectedGeneSymbol}}</option>
+    				<option ng-repeat="node in humanGenes" value="{{node.id}}">{{node.label}}</option>
+			</select>
+			<br>
+			&nbsp;&nbsp;
+			Select Degrees of Separation
+			<select name="degrees-of-separation-select" id="degrees-of-separation-select" ng-model="dummy2" ng-init="dummy2 = '3'" ng-change="dualGraph.selectDegreesofSeparation()">
+					<option>1</option>
+					<option>2</option>
+					<option>3</option>
+					<option>4</option>
+					<option>5</option> <!-- May encounter performance rendering issues -->
+			</select>
+		</div>
+    </div>
+	<div class="main-row">
+		<div class="6u-first">
+			<!-- ********************** CANVAS *********************** -->
+			<table class="view">
+				<tbody>
+					<tr>
+						<td width="50%">
+							<h2>hESC Visualization</h2>
+							<div id="humanGenesGraph">
+								<div tabindex="900"
+									style="position: relative; overflow: hidden; -moz-user-select: none; width: 100%; height: 100%;"
+									class="vis-network">
+									<canvas height="800" width="925"
+										style="position: relative; -moz-user-select: none; width: 100%; height: 100%;"></canvas>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<!-- ********************** CANVAS *********************** -->
+        </div>
+        <div class="6u">
+        	<!-- ********************** CANVAS *********************** -->
+			<table class="view">
+				<tbody>
+					<tr>
+						<td width="50%">
+							<h2>mESC Visualization</h2>
+							<div id="mouseGenesGraph">
+								<div tabindex="900"
+									style="position: relative; overflow: hidden; -moz-user-select: none; width: 100%; height: 100%;"
+									class="vis-network">
+									<canvas height="800" width="925"
+										style="position: relative; -moz-user-select: none; width: 100%; height: 100%;"></canvas>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<!-- ********************** CANVAS *********************** -->
+        </div>
+    </div>
+    <div class="row">
+	    <div class='legend'>
+			<div class='legend-title'>Legend</div>
+			<div class='legend-scale'>
+			  <ul class='legend-labels'>
+			    <li><span style='background:darkred;'></span>0.0-0.1</li>
+			    <li><span style='background:darkorange;'></span>0.1-0.2</li>
+			    <li><span style='background:goldenrod;'></span>0.2-0.3</li>
+			    <li><span style='background:darkgreen;'></span>0.3-0.4</li>
+			    <li><span style='background:teal;'></span>0.4-0.5</li>
+			    <li><span style='background:darkblue;'></span>0.5-0.6</li>
+			    <li><span style='background:violet;'></span>0.6-0.7</li>
+			    <li><span style='background:pink;'></span>0.7-0.8</li>
+			    <li><span style='background:gray;'></span>0.8-0.9</li>
+			    <li><span style='background:black;'></span>0.9-1.0</li>
+			  </ul>
+			</div>
+		</div>
+    </div>
+    <br>
+</div>

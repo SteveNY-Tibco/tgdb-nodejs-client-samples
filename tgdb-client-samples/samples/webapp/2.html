@@ -1,0 +1,170 @@
+<!--This is the overlay-->
+<div id="mySidenav" class="sidenav">
+  <p> Graph Editor: <br>Dynamic, intelligent Models </p>
+  <p> With TIBCO Graph Database, you will be able to create intelligent models of data in nodes and edges to be able to dynamically change relationships between sets of data without taking performance hits. </p>
+  <p> To demonstrate this, with this editor, you will be able to interact with an instance of TIBCO Graph DB to create your own data schema in the form of a graph.</p>
+  <p>Note that you are able to create relationships without incurring any table joins!  This will allow you to dynamically build and analyze relationships in multiple levels without suffering the performance defecits of multiple joins. </p>
+</div>
+<p style="font-size:20px;cursor:pointer;" onclick="toggleNav()" id="overlayButton">A<br>b<br>o<br>u<br>t</p>
+<!--This is the overlay-->
+
+
+<div class="5grid" ng-controller="GraphController as graph">
+	<div class="main-row">
+		<div class="4u-first">
+			<!-- ********************** EDITOR *********************** -->
+			<table>
+				<ul class="nav nav-tabs">
+					<li ng-click="graph.selectTab(1)"
+						ng-class="{'active':graph.isActive(1)}"><a href="#home">Node</a></li>
+					<li ng-click="graph.selectTab(2)"
+						ng-class="{'active':graph.isActive(2)}"><a href="#menu1">Edge</a></li>
+					<li ng-click="graph.selectTab(3)"
+						ng-class="{'active':graph.isActive(3)}"><a href="#menu2">Script</a></li>
+				</ul>
+				<p>
+				<div class="tab-content">
+					<div id="node-tab"
+						ng-class="graph.isActive(1)?'tab-pane fade in active':'tab-pane fade'">
+						<form role="form">
+							<div class="form-group">
+								<label class="radio-inline"> 
+									<input type="radio" ng-checked="graph.isCurrentMode(0)" ng-click="graph.selectMode(0)">Create</input>
+								</label> 
+									<label class="radio-inline"> 
+									<input type="radio" ng-checked="graph.isCurrentMode(1)" ng-click="graph.selectMode(1)">Modify</input>
+								</label>
+							</div>
+							<div class="form-group">
+								<label for="node-name">Node Name:</label> <br>
+								<span ng-if="graph.isCurrentMode(0)" class="animate-if"> 
+									<input type="text" class="form-control" id="node-name">
+								</span> 
+								<span ng-if="graph.isCurrentMode(1)" class="animate-if">
+									<br><select name="node-select" id="node-select" ng-model="dummy" ng-change="graph.selectEntity('node')">
+										<option ng-repeat="node in availableNodes"	value="{{node.id}}">{{node.label}}</option>
+									</select>
+								</span>
+							</div>
+							<span ng-if="graph.isCurrentMode(1)" class="animate-if"> 
+								<div class="form-group"> 
+									<input type="hidden" class="form-control" id="node-key" value="-----" readonly>
+								</div>
+							</span>
+							<div class="form-group">
+								<label for="node-attributes">Attributes:</label> <br>
+								<textarea id="node-attributes" rows="10" cols="40"></textarea>
+							<div class="form-group">
+								<span ng-if="graph.isCurrentMode(0)" class="animate-if"> 
+									<input disabled type="submit" id="add-node" value="Create" ng-click="graph.addNode()"/>
+								</span>
+								<span ng-if="graph.isCurrentMode(1)" class="animate-if"> 
+									<input disabled type="submit" id="update-node" value="Update" ng-click="graph.updateNode()"/>
+									<input disabled type="submit" id="delete-node" value="Delete" ng-click="graph.deleteNode()"/>
+								</span>
+							</div>							
+							</div>
+						</form>
+					</div>
+					<div id="edge-tab"
+						ng-class="graph.isActive(2)?'tab-pane fade in active':'tab-pane fade'">
+						<form role="form">
+							<div class="form-group">
+								<label class="radio-inline"> 
+									<input type="radio" ng-checked="graph.isCurrentMode(0)" ng-click="graph.selectMode(0)">Create</input>
+								</label> 
+									<label class="radio-inline"> 
+									<input type="radio" ng-checked="graph.isCurrentMode(1)" ng-click="graph.selectMode(1)">Modify</input>
+								</label>
+							</div>
+							<div class="form-group">
+								<label for="edge-name">Edge ID:</label> <br>
+								<span ng-if="graph.isCurrentMode(0)" class="animate-if"> 
+									<input type="text" class="form-control" id="edge-name">
+								</span> 
+								<span ng-if="graph.isCurrentMode(1)" class="animate-if">
+									<br><select name="edge-select" id="edge-select" ng-model="dummy" ng-change="graph.selectEntity('edge')">
+										<option ng-repeat="edge in availableEdges"	value="{{edge.id}}">{{edge.id}}</option>
+									</select>
+								</span>
+							</div>
+							<span ng-if="graph.isCurrentMode(1)" class="animate-if"> 
+								<div class="form-group">
+									<input type="hidden" class="form-control" id="edge-key" value="-----" readonly>
+								</div>
+							</span>
+							<div class="form-group">
+								<label for="from-node">From Node:</label>
+								<span ng-if="graph.isCurrentMode(1)" class="animate-if"> 
+									<input type="text" class="form-control" id="from-node-name" value="-----" readonly>
+								</span> 
+								<span ng-if="graph.isCurrentMode(0)" class="animate-if">
+									<br><select name="from-node-select" id="from-node-select" ng-model="dummy" ng-change="graph.selectFromNode()">
+										<option ng-repeat="fromNode in availableNodes"	value="{{fromNode.id}}">{{fromNode.label}}</option>
+									</select>
+								</span>
+							</div>
+							<div class="to-group">
+								<label for="to-node">To Node:</label>
+								<span ng-if="graph.isCurrentMode(1)" class="animate-if"> 
+									<input type="text" class="form-control" id="to-node-name" value="-----" readonly>
+								</span> 
+								<span ng-if="graph.isCurrentMode(0)" class="animate-if">
+									<br><select name="to-node-select" id="to-node-select" ng-model="dummy" ng-change="graph.selectToNode()">
+										<option ng-repeat="toNode in availableNodes"	value="{{toNode.id}}">{{toNode.label}}</option>
+									</select>
+								</span>
+							</div>
+							<br>
+							<div class="form-group">
+								<label for="edge-attributes">Attributes:</label> <br>
+								<textarea id="edge-attributes" rows="10" cols="40"></textarea>
+							</div>
+							<div class="form-group">
+								<span ng-if="graph.isCurrentMode(0)" class="animate-if"> 
+									<input disabled type="submit" id="add-edge" value="Create" ng-click="graph.addEdge()"/>
+								</span>
+								<span ng-if="graph.isCurrentMode(1)" class="animate-if"> 
+									<input disabled type="submit" id="update-edge" value="Update" ng-click="graph.updateEdge()"/>
+									<input disabled type="submit" id="delete-edge" value="Delete" ng-click="graph.deleteEdge()"/>
+								</span>
+							</div>							
+						</form>
+					</div>
+					<div id="script"
+						ng-class="graph.isActive(3)?'tab-pane fade in active':'tab-pane fade'">
+						<div class="form-group">
+							<label for="script-editor">Script Editor: ( Double click to load sample script )</label> 
+							<textarea id="script-editor" ng-dblclick="graph.loadSampleScript()" style="font-size: 10pt" rows="33" cols="60"></textarea>
+						</div>
+						<div class="form-group">
+							 <input type="submit" id="execute-script" value="Execute" ng-click="graph.executeScript()"/>
+						</div>							
+					</div>
+				</div>
+			</table>
+			<!-- ********************** EDITOR *********************** -->
+		</div>
+		<div class="8u">
+			<!-- ********************** CANVAS *********************** -->
+			<table class="view">
+				<tbody>
+					<tr>
+						<td width="50%">
+							<h2>Graph</h2>
+							<div id="network" class="editor">
+								<div tabindex="900"
+									style="position: relative; overflow: hidden; -moz-user-select: none; width: 100%; height: 100%;"
+									class="vis-network">
+									<canvas id="editorCanvas" height="100" width="925"
+										style="position: relative; -moz-user-select: none; width: 100%; height: 100%;"></canvas>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<!-- ********************** CANVAS *********************** -->
+		</div>
+	</div>
+</div>

@@ -1,0 +1,220 @@
+/*
+ * The CSS here pertains to the homepage.
+ */
+
+@font-face {
+    font-family: light;
+    src: url(../assets/fonts/gotham/gotham-light.woff2) format("woff2"),
+         url(../assets/fonts/gotham/gotham-light.woff) format("woff")
+}
+
+@font-face {
+	font-family: book;
+	src: url(../assets/fonts/gotham/gotham-book.woff2) format("woff2"),
+	     url(../assets/fonts/gotham/gotham-book.woff) format("woff")
+}
+
+@font-face {
+	font-family: medium;
+	src: url(../assets/fonts/gotham/gotham-medium.woff2) format("woff2"),
+	     url(../assets/fonts/gotham/gotham-medium.woff) format("woff")}
+
+.fullwidth {
+    background: #3E3E3E none repeat scroll 0% 0%;
+    padding: 85px 0;
+    margin: 0 0 0;
+}
+
+.fullwidth .row {
+    animation: 1s ease-in-out 0s normal none 1 running fromTop;
+    position: relative;
+}
+
+.row {
+    margin: auto;
+    float: none;
+    padding: 0px;
+    max-width: 1230px;
+    width: 100%;
+    font-weight: 400;
+    font-family: "Gotham SSm A","Gotham SSm B","Gotham A","Gotham B",book,helvetica,arial,sans-serif;
+    color: #222;
+    font-style: normal;
+    line-height: 1.5;
+    cursor: auto;
+    font-size: 100%;
+}
+
+.row .row.collapse::after, .row .row.collapse::before, .row .row::after, .row .row::before, .row::after, .row::before {
+    content: " ";
+    display: table;
+}
+
+.button-bar::after, .button-group::after, .clearfix::after, .row .row.collapse::after, .row .row::after, .row::after, .tabs-content::after, .tabs::after {
+    clear: both;
+}
+
+*, *::after, *::before {
+    box-sizing: border-box;
+}
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+a.hp {
+    font-family: "Gotham A","Gotham B",book,helvetica,arial,sans-serif;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+a, p {
+    font-family: "Gotham A","Gotham B",book,helvetica,arial,sans-serif;
+    font-size: 13px;
+}
+
+p.hp, h2.hp, p.desc, h2.desc {
+    padding: 0;
+    font-weight: 400;
+    text-rendering: optimizelegibility;
+    font-style: normal;
+    cursor: auto;
+}
+
+h2.hp {
+    margin: 0 0 0.5em;
+    font-family: "Gotham A","Gotham B",light,helvetica,arial,sans-serif;
+    color: #fff;
+    font-size: 30px;
+    line-height: 1.4;
+}
+
+h2.desc {
+	font-family: "Gotham A","Gotham B",book,helvetica,arial,sans-serif;
+	color: #222;
+    font-size: 22px;
+    text-align: center;
+}
+
+p.desc {
+	font-family: "Gotham A","Gotham B",book,helvetica,arial,sans-serif;
+    font-size: 13px;
+    text-align: center;
+}
+
+p.hp {
+    font-family: "Gotham A","Gotham B",light,helvetica,arial,sans-serif;
+    margin: 0.25rem 0px;
+    color: #FFF;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.pane-node-field-hero-image {
+    bottom: -75px;
+    position: absolute;
+    right: 0.9375rem;
+    z-index: 20;
+}
+
+.column, .columns {
+    float: left;
+    padding-left: 0.9375rem;
+    padding-right: 0.9375rem;
+    position: relative;
+}
+
+.large-4 {
+    width: 33.3333%;
+}
+
+.item-list {
+    position: relative;
+    z-index: 25;
+    float: left;
+    width: 100%;
+}
+
+.pane-node-field-description {
+    width: 55%;
+}
+
+a.wiki {
+	position:relative;
+	top:20px;
+	text-decoration: none;
+    background: rgba(0, 0, 0, 0) none repeat scroll 0 0;
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0.9em 1.25em 0.8em;
+}
+
+a.wiki:hover {
+    background: #fff none repeat scroll 0 0;
+    color: #324a66;
+}
+
+.quicktabs-wrapper .item-list ul.quicktabs-tabs {
+    border-bottom: 1px solid #e3e7ea;
+    float: left;
+    list-style: outside none none;
+    width: 100%;
+}
+ul.quicktabs-tabs {
+    margin-top: 0;
+    display: flex;
+    justify-content: center;
+}
+.item-list ul {
+    margin: 0 0 0.75em;
+    padding: 0;
+}
+ul {
+    margin-left: 1.1rem;
+}
+dl, ol, ul {
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.6;
+    list-style-position: outside;
+    margin-bottom: 1.25rem;
+}
+
+.quicktabs-wrapper .item-list ul.quicktabs-tabs li a {
+    color: #273240;
+    display: block;
+    font-size: 14px;
+    padding: 0.8rem 1.2rem;
+}
+
+li.active {
+    border-bottom: 2px solid #ffa600;
+}
+
+.quicktabs-wrapper .item-list ul.quicktabs-tabs li {
+    float: left;
+    height: 45px;
+    margin: 0 1.5em 0 0;
+    padding: 0;
+}
+
+ul.quicktabs-tabs li {
+    background: rgba(0, 0, 0, 0) none repeat scroll 0 0;
+    display: inline;
+    list-style-type: none;
+    padding: 2px;
+    white-space: nowrap;
+}
+
+.quicktabs-tabpage {
+    display: inline-block;
+    padding: 2rem 0;
+    width: 100%;
+}
+
+.quicktabs-centered {
+    background: #f3f5f6 none repeat scroll 0 0;
+    display: inline-block;
+    width: 100%;
+}

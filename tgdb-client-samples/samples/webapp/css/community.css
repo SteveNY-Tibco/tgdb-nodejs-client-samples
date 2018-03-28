@@ -1,0 +1,124 @@
+/*
+ * The CSS here pertains to contents within the community panels on homepage.
+ */
+
+a.cmty, p.cmty {
+    font-family: "Gotham A","Gotham B",book,helvetica,arial,sans-serif;
+    font-size: 13px;
+}
+
+a.cmty {
+	color: #318dde;
+}
+
+.downloads a::before {
+    background: rgba(0, 0, 0, 0) url("//d2wh20haedxe3f.cloudfront.net/sites/all/themes/tibco_community/assets/images/download-blue.svg") repeat scroll 0 0;
+    content: "";
+    float: left;
+    height: 12px;
+    margin: 2px 0.5rem 0 0;
+    width: 9px;
+}
+
+h3.cmty {
+    padding-left: 0.9375rem;
+}
+
+.release-header {
+    font-family: "Gotham A","Gotham B",medium,helvetica,arial,sans-serif;
+    font-weight: 900;
+}
+
+.downloads a, .downloads span {
+    clear: both;
+    float: left;
+    font-size: 13px;
+    padding: 0 0 0.25rem;
+}
+
+.release-note {
+    padding: 0 0 1rem;
+}
+
+a.toggle-release::before {
+    background: rgba(0, 0, 0, 0) url("//d2wh20haedxe3f.cloudfront.net/sites/all/themes/tibco_community/assets/images/dropdown-blue.svg") repeat scroll 0 0;
+    content: "";
+    float: left;
+    height: 10px;
+    margin: 6px 6px 0;
+    transform: rotate(-90deg);
+    transition: all 0.25s ease-in-out 0s;
+    width: 16px;
+}
+
+a.toggle-release.open::before {
+    transform: rotate(0deg);
+    transition: all 0.5s ease-in-out 0s;
+}
+
+a.toggle-release {
+    font-family: "Gotham A","Gotham B",light,helvetica,arial,sans-serif;
+    font-size: 20px;
+}
+
+.wikibutton::after {
+    background: rgba(0, 0, 0, 0) url("//d2wh20haedxe3f.cloudfront.net/sites/all/themes/tibco_community/assets/images/cta-arrow-white.svg") no-repeat scroll center top;
+    content: "";
+    float: right;
+    height: 9px;
+    margin: 1px 0 0 5px;
+    width: 12px;
+}
+
+.wikibutton {
+    background: #318dde none repeat scroll 0 0;
+    color: #fff;
+    float: left;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0.9em 1.25em 0.8em;
+}
+.wikibutton, wikibutton {
+    background: #318dde none repeat scroll 0 0;
+    color: #fff;
+    font-family: "Gotham A","Gotham B",book,helvetica,arial,sans-serif;
+    transition: background-color 0.1s ease-in-out 0s;
+}
+.wikibutton, wikibutton {
+    background-color: #008cba;
+    border-color: #007095;
+    border-radius: 0;
+    border-style: solid;
+    border-width: 0;
+    display: inline-block;
+    font-weight: 400;
+    line-height: normal;
+    margin: 0 0 1.25rem;
+    padding: 0.9em 1.25em 0.8em;
+    text-align: center;
+}
+
+table {
+    border: 0 none;
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100% !important;
+}
+
+table {
+    background: #fff none repeat scroll 0 0;
+    border: 1px solid #ddd;
+    margin-bottom: 1.25rem;
+    table-layout: auto;
+}
+
+table tr td {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    border-color: -moz-use-text-color -moz-use-text-color #e3e7ea;
+    border-image: none;
+    border-style: none none solid;
+    padding: 1em;
+}
