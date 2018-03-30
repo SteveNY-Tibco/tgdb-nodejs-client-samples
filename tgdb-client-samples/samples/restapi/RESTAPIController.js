@@ -1,3 +1,17 @@
+/**
+ * Copyright 2016 TIBCO Software Inc. All rights reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); You may not use this file except 
+ * in compliance with the License.
+ * A copy of the License is included in the distribution package with this file.
+ * You also may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
         
 var fs   = require('fs');
 var tgdb = require('tgdb');
@@ -12,99 +26,166 @@ function RESTAPIController() {
 	
 }
 
+/**
+ * 
+ *  For metadata
+ * 
+ */
+
+RESTAPIController.prototype.getNodeTypes = function(req, res) {
+	logger.logInfo('query = ' + req.query);	
+	return res.json(dba.getEntityTypes(0));
+};
+
+RESTAPIController.prototype.getEdgeTypes = function(req, res) {
+	logger.logInfo('query = ' + req.query);	
+	return res.json(dba.getEntityTypes(1));
+};
+
 RESTAPIController.prototype.getMetadata = function(req, res) {
 	logger.logInfo('query = ' + req.query);	
 	dba.getMetadata(function(metedata){
-		return res.json(metedata);
+		res.json(metedata);
 	});
 };
 
+/**
+ * 
+ *  Insert/update
+ * 
+ */
+RESTAPIController.prototype.upsertNode = function(req, res) {
+	logger.logInfo('query = ' + req.body);
+	var nodeTypeName = req.params.node_type;
+	dba.insertNode(nodeTypeName, req.body, function(node, exception){
+		if(!!exception) {
+			if(!(exception instanceof tgdb.TGTransactionUniqueConstraintViolationException)) {
+				res.send(exception);	
+			} else {
+				dba.updateNode(nodeTypeName, req.body, function(node, exception){
+					if(!!exception) {
+						res.send(exception);	
+					} else {
+						res.send(entityToJS(node));	
+					}
+				});
+			}
+		} else {
+			res.send(entityToJS(node));	
+		}
+	});
+};
+
+/*
+{
+  "source": {
+    "type": "houseMemberType",
+    "memberName": "Raphael"
+  },
+  "target": {
+    "type": "houseMemberType",
+    "memberName": "Raphael3"
+  },
+  "properties" : {
+    "relType": "RE1",
+    "since": "now"
+  }
+    
+}
+*/
+
+RESTAPIController.prototype.insertEdge = function(req, res) {
+	logger.logInfo('query = ' + req.body);	
+	var edgeTypeName=req.params.edge_type;
+	dba.insertEdge(edgeTypeName, req.body, function(edge){
+		res.send(entityToJS(edge));	
+	});
+};
+
+/**
+ * 
+ *  For unique id query
+ * 
+ */
+
+/*
+{
+	"type" : "airportType",
+	"key" : {}, 
+	"properties" : {
+		"name": "John F Kennedy International Airport",
+		"iataCode": "JFKGGGGx",
+		"country": "United States",
+		"city": "New York",
+		"icaoCode": "KJFKXXXy",
+		"airportID": "AIRPORT99000000"
+	}
+}
+*/
+
 RESTAPIController.prototype.getNode = function(req, res) {
-	/*
-	 * keys : [
-	 *    {
-	 *       entityType : "node",
-	 *       type : "someType",
-	 *       keyAttributes : { 
-	 *          "attrName01" : "attrValue01",
-	 *          "attrName02" : "attrValue02"
-	 *       }
-	 *    }
-	 * ]
-	 *
-	 * */
 	logger.logInfo('query = ' + req.query);	
 	var type=req.params.node_type;
 	console.log(req.params[0]);
-	var keyValues=req.params[0].split("/");
-	var keyAttributeNames = dba.getKeyAttributes(0, type);	
+	
 	var para = {
-		keys : [
-			{
-				entityType : 0,
-				type : type,
-				keyAttributes : {}
-			}
-		]
+		"type" : type,
+		"key" : {}, 
+		"properties" : {}
 	};
 	
+	var keyValues=req.params[0].split("/");
+	var keyAttributeNames = dba.getKeyAttributes(0, type);
 	for(var i=0; i<keyAttributeNames.length; i++) {
-		para.keys[0].keyAttributes[keyAttributeNames[i]] = keyValues[i];
+		para.key[keyAttributeNames[i]] = keyValues[i];
 	}
-	
+
 	dba.getEntity(para, function(ent){
-		var result={};
-		var edgeArray=[];
-		var nodeArray=[];
-		var nodeList={};
-		if (!!ent) {
-			var nodeid=ent.getId().getHexString();
-			logger.logInfo(" got entity "+ent.getEntityKind().name);
-			var info=entityToJS(ent);
-			nodeList[nodeid]=info;
-			var curEdges = ent.getEdges();
-			logger.logInfo(" has edges : "+curEdges.length);
-			curEdges.forEach(function(edge) {
-				var edgeinfo = {};
-				edgeinfo=entityToJS(edge);
-				var from=edge.getVertices()[0];
-				var to=edge.getVertices()[1];
-				// add from and to nodes to the node map if necessary
-				if (from.getId().getHexString()!=nodeid) {
-					nodeList[from.getId().getHexString()]=entityToJS(from);
-				}
-				if (to.getId().getHexString()!=nodeid) {
-					nodeList[to.getId().getHexString()]=entityToJS(to);    
-				} 
-				edgeinfo.source=from.getId().getHexString();
-				edgeinfo.target=to.getId().getHexString();
-				edgeArray.push(edgeinfo);
-			});
-			for (n in nodeList) {
-				nodeArray.push(nodeList[n]);
-			}
-			result["nodes"]=nodeArray;
-			result["links"]=edgeArray;
-			logger.logInfo(" got entity with attributes "+info);
+		var result = {
+				"nodes" : [],
+				"links" : []
+			};
+		var graph = dba.extractEntities(ent);
+		for(var i=0; i<graph.nodes.length; i++) {
+			result.nodes.push(entityToJS(graph.nodes[i]));
 		}
+		for(var i=0; i<graph.edges.length; i++) {
+			result.links.push(entityToJS(graph.edges[i]));
+		}
+		
 		return res.json(result);
 	});
 };
 
-RESTAPIController.prototype.search = function(req, res) {
-	logger.logInfo('query = ' + req.body);	
+/**
+ * 
+ *  For searching
+ * 
+ */
 
-	var para = {
-		"query" : req.body.query, //"@nodetype = 'airlineType' and iataCode = 'DL';",
-		"traversalCondition" : req.body.traversalCondition,
-		"endCondition" : req.body.endCondition,
-		"traversalDepth" : "3"
-	};
+
+RESTAPIController.prototype.search = function(req, res) {
+	logger.logInfo('query = ' + req.body);
+	
+	var para = req.body;
+	if(!para.traversalDepth) {
+		para.traversalDepth = 1;
+	}
+	
 	dba.query(para, function(resultSet){
-		var result=[];
+		var result = {
+			"nodes" : [],
+			"links" : []
+		};
 		if(!!resultSet) {
 			while (resultSet.hasNext()) {
-				result.push(entityToJS(resultSet.next()));
+				var graph = dba.extractEntities(resultSet.next(), para.traversalDepth);
+				for(var i=0; i<graph.nodes.length; i++) {
+					result.nodes.push(entityToJS(graph.nodes[i]));
+				}
+				for(var i=0; i<graph.edges.length; i++) {
+					result.links.push(entityToJS(graph.edges[i]));
+				}
 			}
 			res.json(result);
 		} else {
@@ -112,6 +193,12 @@ RESTAPIController.prototype.search = function(req, res) {
 		}
 	});
 };
+
+/**
+ * 
+ *  Controller interface
+ * 
+ */
 
 RESTAPIController.prototype.close = function() {
 	logger.logInfo("[RoutesController::close] Close dba !!!!!! ");
@@ -122,23 +209,42 @@ RESTAPIController.prototype.close = function() {
 
 RESTAPIController.prototype.services = function() {
 	var services = [
-		{ method : 'get', uri : '/tgdb/metedata', task : this.getMetadata },
+		{ method : 'get', uri : '/tgdb/metadata', task : this.getMetadata },
+		{ method : 'get', uri : '/tgdb/nodetypes', task : this.getNodeTypes},
+		{ method : 'get', uri : '/tgdb/edgetypes', task : this.getEdgeTypes},
 		{ method : 'get', uri : '/tgdb/node/:node_type/*', task : this.getNode},
-		{ method : 'post', uri : '/tgdb/search', task : this.search }
+		{ method : 'post', uri : '/tgdb/search', task : this.search },
+		{ method : 'post', uri : '/tgdb/node/:node_type', task : this.upsertNode },
+		{ method : 'post', uri : '/tgdb/edge', task : this.insertEdge }
 	];
 
 	return services;
 };
 
-//entities returned by the graph DB services are not JSON friendly
-//return a simplified object from an entity 
+/*
+ * 
+ *  Utility
+ * 
+ * */
+
 function entityToJS(ent) {
 	var info={};
 	info["id"]=ent.getId().getHexString();
+ 	if(1==dba.checkEntityType(ent)) {
+ 		var edge = ent;
+		var from = edge.getVertices()[0];
+		var to = edge.getVertices()[1];
+		if(!!from&&!!to) {
+			info.source=from.getId().getHexString();
+			info.target=to.getId().getHexString();
+		}
+ 	}
+
 	var attrArray=ent.getAttributes();
  	attrArray.forEach(function(attr) {
  		info[attr.getName()]=attr.getValue();
  	});
+ 	
  	return info;
 }
 

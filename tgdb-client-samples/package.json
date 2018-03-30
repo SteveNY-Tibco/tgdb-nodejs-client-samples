@@ -1,10 +1,14 @@
 {
   "name": "tgdb-client-samples",
-  "version": "0.9.2",
+  "version": "0.9.4",
   "description": "Samples to show the usage of TGDB client API.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository" : { 
+  	"type" : "git",
+	"url" : "https://github.com/SteveNY-Tibco/tgdb-nodejs-client-samples.git"
   },
   "author": "Steven Yang",
   "license": "Apache-2.0",

@@ -1,6 +1,22 @@
+/**
+ * Copyright 2016 TIBCO Software Inc. All rights reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); You may not use this file except 
+ * in compliance with the License.
+ * A copy of the License is included in the distribution package with this file.
+ * You also may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
         
 var fs          = require('fs');
 var tgdb        = require('tgdb');
+var TGDataAccessException = require('./exception/TGDataAccessException').TGDataAccessException;
+
 var conf = JSON.parse(fs.readFileSync('./conf/server.json'));
 
 var connFactory = tgdb.TGConnectionFactory.getFactory();
@@ -8,8 +24,9 @@ var TGLogLevel  = tgdb.TGLogLevel;
 var logger = tgdb.TGLogManager.getLogger();
 logger.setLevel(TGLogLevel.Debug);
 
+var dba = null;
 function TGDBAccessor() {
-	var dba = this;
+	dba = this;
 	dba.conn = connFactory.createConnection(
 			conf.dataSources.routes.url, 
 			conf.dataSources.routes.user, 
@@ -32,12 +49,54 @@ function TGDBAccessor() {
 	dba.option.setEdgeLimit(500);
 }
 
+TGDBAccessor.prototype.checkEntityType = function(ent) {
+	if(!this.gof.isEntity(ent)) {
+		throw("Not an entity : " + ent);
+    }
+	
+    if (this.gof.isNode(ent)) {
+    	return 0;
+    } else if (this.gof.isEdge(ent)) {
+    	return 1;
+    } else {
+		throw("Unknown entity type : " + ent);
+    }
+};
+
 TGDBAccessor.prototype.getMetadata = function(callback) {
 	logger.logInfo(" retrieving metadata" );
     var data={};
-    data["nodeTypes"]=this.tgmetadata.getNodeTypes();
-    data["edgeTypes"]=this.tgmetadata.getEdgeTypes();
-    callback(data);
+    if(!dba.tgmetadata) {
+		dba.conn.getGraphMetadata(true,function(gmd) {
+			dba.tgmetadata = gmd;
+			console.log("Got metadata ....... ");
+		    data["nodeTypes"]=dba.tgmetadata.getNodeTypes();
+		    data["edgeTypes"]=dba.tgmetadata.getEdgeTypes();
+		    callback(data);
+		});
+    } else {
+    	data["nodeTypes"]=dba.tgmetadata.getNodeTypes();
+    	data["edgeTypes"]=dba.tgmetadata.getEdgeTypes();
+    	callback(data);
+    }
+};
+
+TGDBAccessor.prototype.getEntityTypes = function(entityType) {
+	logger.logInfo(" retrieving node types" );
+    var types = null;
+	if(0===entityType) {
+		types = this.tgmetadata.getNodeTypes();
+	} else if(1===entityType) {
+		types = this.tgmetadata.getEdgeTypes();
+	} else {
+		throw("Invalid entity type : " + entityType);
+	}
+	
+    var entityTypes=[];
+	for(var i=0; i<types.length; i++) {
+		entityTypes.push(types[i]._name);
+	}
+	return entityTypes;
 };
 
 TGDBAccessor.prototype.getKeyAttributes = function(entityType, type) {
@@ -75,25 +134,124 @@ TGDBAccessor.prototype.getEntities = function(para, callback) {
 };
 
 TGDBAccessor.prototype.getEntity = function(para, callback) {
-    logger.logInfo(para);
-	
 	var option = this.buildQueryOption(para);
-	var keys = this.buildEntityKeys(para);
-  	this.conn.getEntity(keys[0], option, function(ent){
+	var key = this.buildEntityKey(para);
+  	this.conn.getEntity(key, option, function(ent){
   		callback(ent);
   	});
 };
 
 TGDBAccessor.prototype.query = function(para, callback) {
+	
+	console.log(para);
+	
 	var option = this.buildQueryOption(para);
 	this.conn.executeQuery(
-		para.query, 
+		para.query.queryString, 
 		option, 
 		function (resultSet){
 			callback(resultSet);
 		}
 	);
 };
+
+TGDBAccessor.prototype.insertNode = function(type, para, callback) {
+	var nodeTypeName = type;
+	var props = para.properties;
+	var nodeType = this.tgmetadata.getNodeType(nodeTypeName);
+	if (!nodeType) {
+		callback(null, new TGDataAccessException("Node type "+type+" does not exist."));
+	}
+	
+	var node = this.gof.createNode(nodeType);
+	for (var k in props) {
+		node.setAttribute(k, props[k]);
+		logger.logInfo("Using attribute "+k);
+	}
+
+	this.conn.insertEntity(node);
+	this.conn.commit(function(changeList, exception){
+		logger.logInfo("Transaction completed for Node : " + props[0]);
+		if(!exception) {
+			callback(node);				
+		} else {
+			callback(null, exception);				
+		}
+	});
+}
+
+TGDBAccessor.prototype.updateNode = function(type, para, callback) {
+	para.type =type;
+	para.key = {};
+	var keyAttributeNames = this.getKeyAttributes(0, type);
+	if (!keyAttributeNames) {
+	      throw("Not search key definition for node type " + type + ".");
+	}
+
+	for(var i=0; i<keyAttributeNames.length; i++) {
+		para.key[keyAttributeNames[i]] = para.properties[keyAttributeNames[i]];
+	}
+	
+	this.getEntity(para, function(node){
+		if(!node) {
+			logger.logInfo(para.key);
+			logger.logInfo("Unable to update, node has not found.");
+			callback(null, new TGDataAccessException("Unable to update, node has not found."));
+		}
+		var props = para.properties;
+		for (var k in props) {
+			node.setAttribute(k, props[k]);
+			logger.logInfo("Using attribute "+k);
+		}
+		dba.conn.updateEntity(node);
+		dba.conn.commit(function(changeList, exception){
+			logger.logInfo("Transaction completed for Node : " + props[0]);
+			if(!exception) {
+				callback(node);				
+			} else {
+				callback(null, exception);				
+			}
+		});
+	});
+};
+
+TGDBAccessor.prototype.insertEdge = function(type, para, callback) {
+	var source = para.source;
+	var target = para.target;
+	var attributes = para.properties;
+	
+	this.getEntity(source, function(sourceNode){
+		if(!sourceNode) {
+			logger.logInfo(para.key);
+			logger.logInfo("Source node has not found.");
+			callback(null, new TGDataAccessException("Source node has not found."));
+		}
+		dba.getEntity(target, function(targetNode){
+			if(!targetNode) {
+				logger.logInfo(para.key);
+				logger.logInfo("Target node has not found.");
+				callback(null, new TGDataAccessException("Target node has not found."));
+			}
+
+			var edge = dba.gof.createUndirectedEdge(sourceNode, targetNode);
+			for (var k in attributes) {
+				edge.setAttribute(k,attributes[k]);
+				logger.logInfo("Setting edge attribute "+k);
+			}
+             
+			logger.logInfo("Create edge : ");
+			dba.conn.insertEntity(edge);
+			dba.conn.commit(function(changeList, exception){
+				logger.logInfo("Transaction completed for Edge");
+				if(!exception) {
+					callback(edge);				
+				} else {
+					callback(null, exception);				
+				}
+			});			
+		});
+	});
+}
 
 TGDBAccessor.prototype.close = function(para, callback) {
 	logger.logInfo("[TGDBAccessor::close] Close connection !!!!!! ");
@@ -104,10 +262,45 @@ TGDBAccessor.prototype.close = function(para, callback) {
 
 TGDBAccessor.prototype.buildQueryOption = function(para) {
 	var option = tgdb.TGQueryOption.createQueryOption();
-	option.setTraversalCondition(para.traversalCondition);
-	option.setEndCondition(para.endCondition);
-	option.setTraversalDepth(para.traversalDepth);
+	
+	if(!!para.query.traversalCondition) {
+		option.setTraversalCondition(para.query.traversalCondition);
+	}
+	
+	if(!!para.query.endCondition) {
+		option.setEndCondition(para.query.endCondition);
+	}
+	
+	option.setPrefetchSize(!para.prefetchSize?this.option.getPrefetchSize():para.prefetchSize);
+	option.setTraversalDepth(!para.traversalDepth?this.option.getTraversalDepth():para.traversalDepth);
+	option.setTraversalDepth(!para.edgeLimit?this.option.getEdgeLimit():para.edgeLimit);
+
 	return option;
+};
+
+TGDBAccessor.prototype.buildEntityKey = function(para) {
+	/*
+	{
+		"type" : "airportType",
+		"key" : {
+			"airportID": "AIRPORT99000000"
+		},
+		"properties" : {
+			"name": "John F Kennedy International Airport",
+			"iataCode": "JFKGGGGx",
+			"country": "United States",
+			"city": "New York",
+			"icaoCode": "KJFKXXXy",
+			"airportID": "AIRPORT99000000"
+		}
+	}
+	*/
+	var tgKey = this.gof.createCompositeKey(para.type);
+	for(var attrName in para.key) {
+		tgKey.setAttribute(attrName, para.key[attrName]);
+	}
+
+	return tgKey;
 };
 
 TGDBAccessor.prototype.buildEntityKeys = function(para) {
@@ -139,6 +332,72 @@ TGDBAccessor.prototype.buildEntityKeys = function(para) {
 
 	return tgKeys;
 };
+
+TGDBAccessor.prototype.extractEntities = function (ent, maxDepth) {
+	if(!maxDepth) {
+		maxDepth = this.option.getTraversalDepth();
+	}
+	var traversedMap = {};
+	var gof = this.gof;
+	traverse(gof, ent, maxDepth, 0, traversedMap);
+	
+	var result = {
+		nodes : [],
+		edges : []
+	};
+	
+	Object.keys(traversedMap).forEach(function(key){
+		var entity = traversedMap[key];
+		if(gof.isNode(entity)) {
+			result.nodes.push(entity);
+		} else {
+			result.edges.push(entity);
+		}
+	});
+	
+	return result;
+};
+
+function traverse(gof, ent, maxDepth, currDepth, traversedMap) {
+	var entityId = ent.getId().getHexString();
+    if (currDepth === maxDepth||!ent) {
+		return;
+	}
+	
+	if (traversedMap[entityId]) {
+		// We've seen it before so do nothing
+		return;
+	}
+
+	// See a new entity will try to traverse down
+	traversedMap[entityId] = ent;
+
+    if (gof.isNode(ent)) {
+    	logger.logDebugWire('A node : ' + ent.getId().getHexString());    	
+        ent.getAttributes().forEach(function(attr) {
+        	logger.logDebugWire('      ' + attr.getValue());
+        });
+	
+    	var edges = ent.getEdges();
+    	edges.forEach(function(edge) {
+    		traverse(gof, edge, maxDepth, currDepth, traversedMap);
+    	});
+    } else if (!gof.isNode(ent)) {
+    	logger.logDebugWire('An edge : ' + ent.getId().getHexString());
+        ent.getAttributes().forEach(function(attr) {
+        	logger.logDebugWire('      ' + attr.getValue());
+        });
+    	
+    	var nodes = ent.getVertices();
+    	nodes.forEach(function(node) {
+    		if(node&&node.getId().getHexString()!==0) {
+        		traverse(gof, node, maxDepth, currDepth, traversedMap);
+    		}
+    	});
+    } else {
+    	logger.logDebugWire('Unknow entity type.');
+    }
+}
 
 //===========================================================================
 

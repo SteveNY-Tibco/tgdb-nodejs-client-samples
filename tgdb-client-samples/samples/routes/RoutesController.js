@@ -1,3 +1,17 @@
+/**
+ * Copyright 2016 TIBCO Software Inc. All rights reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); You may not use this file except 
+ * in compliance with the License.
+ * A copy of the License is included in the distribution package with this file.
+ * You also may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
         
 var fs   = require('fs');
 var tgdb = require('tgdb');
@@ -9,13 +23,11 @@ var TGLogLevel  = tgdb.TGLogLevel;
 var logger = tgdb.TGLogManager.getLogger();
 logger.setLevel(TGLogLevel.Debug);
 
-
 function RoutesController() {
-	
 }
 
 function buildTraversalQueryParameter(query, airlineIDName) {
-	var para = {};
+	var para = { query:{} };
 	// Build and execute query
 	var queryString = "@nodetype = 'airportType' and iataCode = '" + query.fromAirport + "';";
 	var traverseString = "@edgetype = 'routeType' and @isfromedge = 1";
@@ -40,9 +52,9 @@ function buildTraversalQueryParameter(query, airlineIDName) {
 	}
 	logger.logInfo(" ...");
 
-	para["queryString"] = queryString;
-	para["traversalCondition"] = traverseString;
-	para["endCondition"] = endString;
+	para.query["queryString"] = queryString;
+	para.query["traversalCondition"] = traverseString;
+	para.query["endCondition"] = endString;
 	para["traversalDepth"] = query.maxStops + 1;
 
 	return para;
@@ -57,7 +69,6 @@ function buildRoutes(stops, level, routes, route, airport, targetCode) {
 			if(nextAirport.getId()===airport.getId()||route.indexOf(iata)>=0) {
 				continue;
 			}
-//				console.log("%s%s - %s - iata", level, i, j, iata);
 			var newRoute = null;
 			if(i!==rts.length-1) {
 				newRoute = route.slice(0);
@@ -77,69 +88,41 @@ function buildRoutes(stops, level, routes, route, airport, targetCode) {
 }
 
 RoutesController.prototype.routes = function(req, res) {
-	var query = {
-			"maxStops" : 2,
-			"airlineCode" : [
-				"DL"
-			],
-			"fromAirport" : "JFK",
-			"toAirport" : "SFO"
-		};
-		
-		logger.logInfo('query = ' + query);	
-		
-		// Search for airline ID first
-		var airlineIDName = [];
-		var queryString = queryString = "@nodetype = 'airlineType'";
-		if (!(!query.airlineCode)) {
-			for(var i=0; i<query.airlineCode.length; i++) {
-				if (i===0)
-					queryString = queryString + " and (iataCode = '" +query.airlineCode[i]+ "'";
-				else
-					queryString = queryString + " or iataCode = '" +query.airlineCode[i]+ "'";
-			}
-			queryString = queryString + ");";
+	var query = req.body;
+	
+	// Search for airline ID first
+	var airlineIDName = [];
+	var queryString = queryString = "@nodetype = 'airlineType'";
+	if (!(!query.airlineCode)) {
+		for(var i=0; i<query.airlineCode.length; i++) {
+			if (i===0)
+				queryString = queryString + " and (iataCode = '" +query.airlineCode[i]+ "'";
+			else
+				queryString = queryString + " or iataCode = '" +query.airlineCode[i]+ "'";
+		}
+		queryString = queryString + ");";
 
-			var para = {};
-			para["queryString"] = queryString;
-			para["traversalDepth"] = query.maxStops + 1;
+		var para = { query:{} };
+		para.query["queryString"] = queryString;
+		para["traversalDepth"] = query.maxStops + 1;
+		
+		dba.query(para, function (result){
+			while (result.hasNext()) {
+				var airline = result.next();
+				var airlineInfo = [];
+				airlineInfo.push(airline.getAttribute("airlineID").getValue());
+				airlineInfo.push(airline.getAttribute("name").getValue());
+				airlineIDName.push(airlineInfo);
+				console.log(airlineIDName);
+			}
 			
-			dba.query(para, function (result){
-				while (result.hasNext()) {
-					var airline = result.next();
-					var airlineInfo = [];
-					airlineInfo.push(airline.getAttribute("airlineID").getValue());
-					airlineInfo.push(airline.getAttribute("name").getValue());
-					airlineIDName.push(airlineInfo);
-					console.log(airlineIDName);
-				}
-				
-				dba.query(buildTraversalQueryParameter(query, airlineIDName), function(resultSet) {
-					// Go through resultSet and build routes
-					var routes = [];
-					if (!!resultSet) {
-						while (resultSet.hasNext()) {
-							var airport0 = resultSet.next();
-							var airportCode0 = (airport0).getAttribute("iataCode").getValue();
-//							tgdb.PrintUtility.printEntitiesBreadth(airport0, 10);						
-							var route = [];
-							route.push(airportCode0);
-							buildRoutes(0, "", routes, route, airport0, query.toAirport);
-				
-						}
-					}
-					return res.json({"numberOfRoutes": routes.length, "routes":routes});
-				});
-			});		
-		} else {
-			dba.queryByExpr(buildTraversalQueryParameter(query, airlineIDName), function(resultSet) {
+			dba.query(buildTraversalQueryParameter(query, airlineIDName), function(resultSet) {
 				// Go through resultSet and build routes
 				var routes = [];
 				if (!!resultSet) {
 					while (resultSet.hasNext()) {
 						var airport0 = resultSet.next();
 						var airportCode0 = (airport0).getAttribute("iataCode").getValue();
-//						tgdb.PrintUtility.printEntitiesBreadth(airport0, 10);						
 						var route = [];
 						route.push(airportCode0);
 						buildRoutes(0, "", routes, route, airport0, query.toAirport);
@@ -147,7 +130,23 @@ RoutesController.prototype.routes = function(req, res) {
 				}
 				return res.json({"numberOfRoutes": routes.length, "routes":routes});
 			});
-		}
+		});		
+	} else {
+		dba.query(buildTraversalQueryParameter(query, airlineIDName), function(resultSet) {
+			// Go through resultSet and build routes
+			var routes = [];
+			if (!!resultSet) {
+				while (resultSet.hasNext()) {
+					var airport0 = resultSet.next();
+					var airportCode0 = (airport0).getAttribute("iataCode").getValue();
+					var route = [];
+					route.push(airportCode0);
+					buildRoutes(0, "", routes, route, airport0, query.toAirport);
+				}
+			}
+			return res.json({"numberOfRoutes": routes.length, "routes":routes});
+		});
+	}	
 };
 
 RoutesController.prototype.close = function() {
@@ -160,8 +159,8 @@ RoutesController.prototype.close = function() {
 RoutesController.prototype.services = function() {
 	var services = [];
 	var service = {
-		method : 'get',
-		uri : '/tgdb/flights',
+		method : 'post',
+		uri : '/samples/routes',
 		task : this.routes
 	};
 	services.push(service);
