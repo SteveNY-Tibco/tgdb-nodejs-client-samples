@@ -28,19 +28,16 @@ var dba = null;
 function TGDBAccessor() {
 	dba = this;
 	dba.conn = connFactory.createConnection(
-			conf.dataSources.routes.url, 
-			conf.dataSources.routes.user, 
-			conf.dataSources.routes.pwd
-		);
+		conf.dataSources.routes.url, 
+		conf.dataSources.routes.user, 
+		conf.dataSources.routes.pwd
+	);
 	dba.gof = null;
 	dba.tgmetadata = null;
 	dba.conn.connect( function() {
-		console.log("Connected ");
+		console.log("Connected ..... ");
 		dba.gof = dba.conn.getGraphObjectFactory();
-		dba.conn.getGraphMetadata(true,function(gmd) {
-			dba.tgmetadata = gmd;
-			console.log("Got metadata ....... ");
-		});
+		dba.tgmetadata = dba.gof.getGraphMetaData();
 	});
 
 	dba.option = tgdb.TGQueryOption.createQueryOption();
@@ -59,7 +56,7 @@ TGDBAccessor.prototype.checkEntityType = function(ent) {
     } else if (this.gof.isEdge(ent)) {
     	return 1;
     } else {
-		throw("Unknown entity type : " + ent);
+		throw(new TGDataAccessException("Unknown entity type : " + ent));
     }
 };
 
@@ -89,7 +86,7 @@ TGDBAccessor.prototype.getEntityTypes = function(entityType) {
 	} else if(1===entityType) {
 		types = this.tgmetadata.getEdgeTypes();
 	} else {
-		throw("Invalid entity type : " + entityType);
+		throw(new TGDataAccessException("Invalid entity type : " + entityType));
 	}
 	
     var entityTypes=[];
@@ -107,12 +104,12 @@ TGDBAccessor.prototype.getKeyAttributes = function(entityType, type) {
 	} else if(1===entityType) {
 		entityMetadata = this.tgmetadata.getEdgeType(type);
 	} else {
-		throw("Invalid entity type : " + entityType);
+		throw(new TGDataAccessException("Invalid entity type : " + entityType));
 	}
 
     if (!entityMetadata)
       throw("type " + type + " does not exist.");
-
+    
     var keyAttributes = [];
   	for ( var k in entityMetadata._pKeys) {
   		keyAttributes.push(entityMetadata._pKeys[k].getName());
@@ -122,6 +119,9 @@ TGDBAccessor.prototype.getKeyAttributes = function(entityType, type) {
 };
 
 TGDBAccessor.prototype.getEntities = function(para, callback) {
+	
+	/* Not implemented yet!!!!!! */
+	
 	var option = this.buildQueryOption(para);
 	var keys = buildEntityKeys(para);
 	var key = keys.shift();
@@ -160,7 +160,7 @@ TGDBAccessor.prototype.insertNode = function(type, para, callback) {
 	var props = para.properties;
 	var nodeType = this.tgmetadata.getNodeType(nodeTypeName);
 	if (!nodeType) {
-		callback(null, new TGDataAccessException("Node type "+type+" does not exist."));
+	    throw(new TGDataAccessException("Node type "+type+" does not exist."));
 	}
 	
 	var node = this.gof.createNode(nodeType);
@@ -171,7 +171,7 @@ TGDBAccessor.prototype.insertNode = function(type, para, callback) {
 
 	this.conn.insertEntity(node);
 	this.conn.commit(function(changeList, exception){
-		logger.logInfo("Transaction completed for Node : " + props[0]);
+		logger.logInfo("Insert transaction completed for Node : " + props[0]);
 		if(!exception) {
 			callback(node);				
 		} else {
@@ -185,7 +185,7 @@ TGDBAccessor.prototype.updateNode = function(type, para, callback) {
 	para.key = {};
 	var keyAttributeNames = this.getKeyAttributes(0, type);
 	if (!keyAttributeNames) {
-	      throw("Not search key definition for node type " + type + ".");
+	    throw(new TGDataAccessException("Node search key definition for node type " + type + "."));
 	}
 
 	for(var i=0; i<keyAttributeNames.length; i++) {
@@ -205,7 +205,7 @@ TGDBAccessor.prototype.updateNode = function(type, para, callback) {
 		}
 		dba.conn.updateEntity(node);
 		dba.conn.commit(function(changeList, exception){
-			logger.logInfo("Transaction completed for Node : " + props[0]);
+			logger.logInfo("Update transaction completed for Node : " + props[0]);
 			if(!exception) {
 				callback(node);				
 			} else {
@@ -213,6 +213,27 @@ TGDBAccessor.prototype.updateNode = function(type, para, callback) {
 			}
 		});
 	});
+};
+
+TGDBAccessor.prototype.deleteNode = function(para, callback) {
+	
+	this.getEntity(para, function(node){
+		if(!node) {
+			logger.logInfo(para.key);
+			callback(null, new TGDataAccessException("Unable to delete, target node has not found."));
+			return;
+		}
+		
+		dba.conn.deleteEntity(node);
+		dba.conn.commit(function(changeList, exception){
+			if(!exception) {
+				logger.logInfo("Delete transaction completed for Node : %s(%s)",para.type ,para.key);	        
+				callback(node);				
+			} else {
+				callback(null, exception);				
+			}
+	    });
+	});	
 };
 
 TGDBAccessor.prototype.insertEdge = function(type, para, callback) {
@@ -224,13 +245,15 @@ TGDBAccessor.prototype.insertEdge = function(type, para, callback) {
 		if(!sourceNode) {
 			logger.logInfo(para.key);
 			logger.logInfo("Source node has not found.");
-			callback(null, new TGDataAccessException("Source node has not found."));
+			throw new TGDataAccessException("Source node has not found.");
 		}
+		
 		dba.getEntity(target, function(targetNode){
 			if(!targetNode) {
 				logger.logInfo(para.key);
 				logger.logInfo("Target node has not found.");
 				callback(null, new TGDataAccessException("Target node has not found."));
+				return;
 			}
 
 			var edge = dba.gof.createUndirectedEdge(sourceNode, targetNode);
@@ -242,12 +265,80 @@ TGDBAccessor.prototype.insertEdge = function(type, para, callback) {
 			logger.logInfo("Create edge : ");
 			dba.conn.insertEntity(edge);
 			dba.conn.commit(function(changeList, exception){
-				logger.logInfo("Transaction completed for Edge");
 				if(!exception) {
+					logger.logInfo("Transaction completed for Edge");
 					callback(edge);				
 				} else {
 					callback(null, exception);				
 				}
+			});			
+		});
+	});
+}
+
+TGDBAccessor.prototype.deleteEdge = function(type, para, callback) {
+	
+	/* Not implemented yet!!!!!! */
+
+	
+	var source = para.source;
+	var target = para.target;
+	var attributes = para.properties;
+	
+	this.getEntity(source, function(sourceNode){
+		if(!sourceNode) {
+			logger.logInfo(para.key);
+			logger.logInfo("Source node has not found.");
+			throw new TGDataAccessException("Source node has not found.");
+		}
+		dba.getEntity(target, function(targetNode){
+			if(!targetNode) {
+				logger.logInfo(para.key);
+				logger.logInfo("Target node has not found.");
+				callback(null, new TGDataAccessException("Target node has not found."));
+				return;
+			}
+			
+			var directionType = null;
+			if(!!direction) {
+			    switch (direction) {
+		    	case TGEdgeDirectionType.UNDIRECTED.ordinal :
+		    		directionType = TGEdgeDirectionType.UNDIRECTED;
+		    		break;
+		    	case TGEdgeDirectionType.DIRECTED.ordinal :
+		    		directionType = TGEdgeDirectionType.DIRECTED;
+		    		break;
+		    	case TGEdgeDirectionType.BIDIRECTIONAL.ordinal :
+		    		directionType = TGEdgeDirectionType.BIDIRECTIONAL;
+		    		break;
+			    }
+			}
+
+			var targetEdges = [];
+			var edges = sourceNode.getEdges();
+			for(var i=0; i<edges.length; i++) {
+				var edge = edges[i];
+				if(!directionType||directionType===edge.getDirection()) {
+					var nodes = edge.getVertices();
+					for(var j=0; j<nodes.length; j++) {
+						var node = nodes[j];
+						if(node==targetNode) {
+							targetEdges.push(edge);
+						}
+					}
+				}
+			}
+			
+			for(var i=0; i<targetEdges.length; i++) {
+				logger.logInfo("Delete edge : ");
+				dba.conn.deleteEntity(targetEdges[i]);
+			}
+			
+			dba.conn.commit(function(changeList, exception){
+		        if(callback) {
+					logger.logInfo("Delete transaction completed for Edge");
+		            callback({'message':'delete edge done!'});
+		        }
 			});			
 		});
 	});
@@ -263,12 +354,14 @@ TGDBAccessor.prototype.close = function(para, callback) {
 TGDBAccessor.prototype.buildQueryOption = function(para) {
 	var option = tgdb.TGQueryOption.createQueryOption();
 	
-	if(!!para.query.traversalCondition) {
-		option.setTraversalCondition(para.query.traversalCondition);
-	}
-	
-	if(!!para.query.endCondition) {
-		option.setEndCondition(para.query.endCondition);
+	if(!!para.query) {
+		if(!!para.query.traversalCondition) {
+			option.setTraversalCondition(para.query.traversalCondition);
+		}
+		
+		if(!!para.query.endCondition) {
+			option.setEndCondition(para.query.endCondition);
+		}
 	}
 	
 	option.setPrefetchSize(!para.prefetchSize?this.option.getPrefetchSize():para.prefetchSize);

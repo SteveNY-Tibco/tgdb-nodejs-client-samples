@@ -34,18 +34,30 @@ function RESTAPIController() {
 
 RESTAPIController.prototype.getNodeTypes = function(req, res) {
 	logger.logInfo('query = ' + req.query);	
-	return res.json(dba.getEntityTypes(0));
+	var result = { 
+		message : 'OK!',
+		nodeTypes : dba.getEntityTypes(0)
+	};
+	return res.json(result);
 };
 
 RESTAPIController.prototype.getEdgeTypes = function(req, res) {
 	logger.logInfo('query = ' + req.query);	
-	return res.json(dba.getEntityTypes(1));
+	var result = { 
+		message : 'OK!',
+		edgeTypes : dba.getEntityTypes(1)
+	};
+	return res.json(result);
 };
 
 RESTAPIController.prototype.getMetadata = function(req, res) {
 	logger.logInfo('query = ' + req.query);	
 	dba.getMetadata(function(metedata){
-		res.json(metedata);
+		var result = { 
+			message : 'OK!',
+			metadata : metedata 
+		};
+		res.json(result);
 	});
 };
 
@@ -57,23 +69,63 @@ RESTAPIController.prototype.getMetadata = function(req, res) {
 RESTAPIController.prototype.upsertNode = function(req, res) {
 	logger.logInfo('query = ' + req.body);
 	var nodeTypeName = req.params.node_type;
-	dba.insertNode(nodeTypeName, req.body, function(node, exception){
-		if(!!exception) {
-			if(!(exception instanceof tgdb.TGTransactionUniqueConstraintViolationException)) {
-				res.send(exception);	
+	var result = {};
+	try{
+		dba.insertNode(nodeTypeName, req.body, function(node, exception){
+			if(!!exception) {
+				if(!(exception instanceof tgdb.TGTransactionUniqueConstraintViolationException)) {
+					result.exception = exception;
+				} else {
+					dba.updateNode(nodeTypeName, req.body, function(node){
+						result = { message : 'Node updated!'};
+						result.node = entityToJS(node);
+						logger.logInfo(result);
+						res.send(result);	
+					});
+				}
 			} else {
-				dba.updateNode(nodeTypeName, req.body, function(node, exception){
-					if(!!exception) {
-						res.send(exception);	
-					} else {
-						res.send(entityToJS(node));	
-					}
-				});
+				result = { message : 'Node inserted!'};
+				result.node = entityToJS(node);
+				res.send(result);	
 			}
-		} else {
-			res.send(entityToJS(node));	
-		}
-	});
+		});
+	} catch(exception) {
+		result.exception = exception;
+		res.send(result);
+	}
+};
+
+RESTAPIController.prototype.deleteNode = function(req, res) {
+	logger.logInfo('query = ' + req.query);	
+	var type=req.params.node_type;
+	console.log(req.params[0]);
+	
+	var para = {
+		"type" : type,
+		"key" : {}
+	};
+	
+	var keyValues=req.params[0].split("/");
+	var keyAttributeNames = dba.getKeyAttributes(0, type);
+	for(var i=0; i<keyAttributeNames.length; i++) {
+		para.key[keyAttributeNames[i]] = keyValues[i];
+	}
+	
+	var result = {};
+	try {
+		dba.deleteNode(para, function(node, exception) {
+			if(!exception) {
+				result = { message : 'Node deleted!'};
+				result.node = entityToJS(node);	
+			} else {
+				result.exception = exception;	
+			}
+			res.send(result);	
+		});
+	} catch (exception) {
+		result.exception = exception;
+		res.send(result);
+	}
 };
 
 /*
@@ -97,9 +149,47 @@ RESTAPIController.prototype.upsertNode = function(req, res) {
 RESTAPIController.prototype.insertEdge = function(req, res) {
 	logger.logInfo('query = ' + req.body);	
 	var edgeTypeName=req.params.edge_type;
-	dba.insertEdge(edgeTypeName, req.body, function(edge){
-		res.send(entityToJS(edge));	
-	});
+	
+	var result = {};
+	try {
+		dba.insertEdge(edgeTypeName, req.body, function(edge, exception){
+			if(!exception) {
+				result = { message : 'Edge inserted!'};
+				result.edge = entityToJS(edge);	
+			} else {
+				result.exception = exception;	
+			}
+			res.send(result);	
+		});
+	} catch (exception) {
+		result.exception = exception;
+		res.send(result);
+	}
+};
+
+RESTAPIController.prototype.deleteEdge = function(req, res) {
+	
+	/* Not implemented yet!!!!!! */
+	
+	logger.logInfo('query = ' + req.body);	
+	var edgeTypeName=req.params.edge_type;
+	
+	var result = {};
+	try {
+		dba.deleteEdge(edgeTypeName, req.body, function(edge, exception){
+			var result = {};
+			if(!exception) {
+				result = { message : 'Edge deleted!'};
+				result.edge = entityToJS(edge);	
+			} else {
+				result.exception = exception;	
+			}
+			res.send(result);
+		});
+	} catch (exception) {
+		result.exception = exception;
+		res.send(result);
+	}
 };
 
 /**
@@ -142,17 +232,21 @@ RESTAPIController.prototype.getNode = function(req, res) {
 
 	dba.getEntity(para, function(ent){
 		var result = {
-				"nodes" : [],
-				"links" : []
+				message : 'OK!',
+				nodes : [],
+				links : []
 			};
-		var graph = dba.extractEntities(ent);
-		for(var i=0; i<graph.nodes.length; i++) {
-			result.nodes.push(entityToJS(graph.nodes[i]));
+		if(!ent) {
+			result.message = 'Node not found!';
+		} else {
+			var graph = dba.extractEntities(ent);
+			for(var i=0; i<graph.nodes.length; i++) {
+				result.nodes.push(entityToJS(graph.nodes[i]));
+			}
+			for(var i=0; i<graph.edges.length; i++) {
+				result.links.push(entityToJS(graph.edges[i]));
+			}
 		}
-		for(var i=0; i<graph.edges.length; i++) {
-			result.links.push(entityToJS(graph.edges[i]));
-		}
-		
 		return res.json(result);
 	});
 };
@@ -174,8 +268,9 @@ RESTAPIController.prototype.search = function(req, res) {
 	
 	dba.query(para, function(resultSet){
 		var result = {
-			"nodes" : [],
-			"links" : []
+			message : 'OK!',
+			nodes : [],
+			links : []
 		};
 		if(!!resultSet) {
 			while (resultSet.hasNext()) {
@@ -187,10 +282,10 @@ RESTAPIController.prototype.search = function(req, res) {
 					result.links.push(entityToJS(graph.edges[i]));
 				}
 			}
-			res.json(result);
 		} else {
-			res.json(result);
+			result.message = 'Nothing return from search!';
 		}
+		res.json(result);
 	});
 };
 
@@ -213,6 +308,7 @@ RESTAPIController.prototype.services = function() {
 		{ method : 'get', uri : '/tgdb/nodetypes', task : this.getNodeTypes},
 		{ method : 'get', uri : '/tgdb/edgetypes', task : this.getEdgeTypes},
 		{ method : 'get', uri : '/tgdb/node/:node_type/*', task : this.getNode},
+		{ method : 'delete', uri : '/tgdb/node/:node_type/*', task : this.deleteNode},
 		{ method : 'post', uri : '/tgdb/search', task : this.search },
 		{ method : 'post', uri : '/tgdb/node/:node_type', task : this.upsertNode },
 		{ method : 'post', uri : '/tgdb/edge', task : this.insertEdge }
