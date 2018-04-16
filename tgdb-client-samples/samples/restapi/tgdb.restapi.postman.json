@@ -1,0 +1,284 @@
+{
+	"version": 1,
+	"collections": [
+		{
+			"id": "32cb3b9d-de18-4be4-9bd6-51ba9040e75e",
+			"name": "Routes-Test",
+			"description": "",
+			"auth": null,
+			"events": null,
+			"variables": [],
+			"order": [
+				"b3923f41-85d1-4246-ad9b-af6430176452"
+			],
+			"folders_order": [],
+			"folders": [],
+			"requests": [
+				{
+					"id": "b3923f41-85d1-4246-ad9b-af6430176452",
+					"name": "routes bwteen two airports",
+					"url": "http://localhost:8080/samples/routes",
+					"description": "",
+					"data": null,
+					"dataMode": "params",
+					"headerData": [],
+					"method": "GET",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": [],
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "32cb3b9d-de18-4be4-9bd6-51ba9040e75e",
+					"headers": "",
+					"pathVariables": {}
+				}
+			]
+		},
+		{
+			"id": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+			"name": "TGDB-API",
+			"description": "getNodeTypes",
+			"auth": null,
+			"events": null,
+			"variables": null,
+			"order": [
+				"32fcba45-7050-d4c6-9cc3-3c1d6821e42f",
+				"03160068-fc96-3448-e8b3-a27b8d423ee4",
+				"dac8670d-4358-e146-26e3-e22c4128aa69",
+				"50ab83e0-f56b-5899-f564-e94ccdfdcfae",
+				"db682715-6380-3c0e-6221-641289025a58",
+				"85abe7d9-e14d-1682-d19f-6f619f95434c",
+				"564e1f62-f596-283f-b4c5-489e5ce3d644",
+				"36e90d3b-dcc9-47ad-ae19-b0909be9c6b5",
+				"0b2f3bc5-6f7e-4aeb-9ba6-785a31d9e484"
+			],
+			"folders_order": [],
+			"folders": [],
+			"requests": [
+				{
+					"id": "03160068-fc96-3448-e8b3-a27b8d423ee4",
+					"name": "get all edge types",
+					"url": "http://127.0.0.1:8080/tgdb/edgetypes",
+					"description": null,
+					"data": [],
+					"dataMode": "params",
+					"headerData": [],
+					"method": "GET",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"headers": "",
+					"pathVariables": {}
+				},
+				{
+					"id": "0b2f3bc5-6f7e-4aeb-9ba6-785a31d9e484",
+					"name": "delete node",
+					"url": "http://localhost:8080/tgdb/node/airportType/AIRPORT12345",
+					"description": "",
+					"data": null,
+					"dataMode": "params",
+					"headerData": [],
+					"method": "DELETE",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": [],
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"headers": "",
+					"pathVariables": {}
+				},
+				{
+					"id": "32fcba45-7050-d4c6-9cc3-3c1d6821e42f",
+					"name": "get metadata",
+					"url": "http://127.0.0.1:8080/tgdb/metadata",
+					"description": "",
+					"data": [],
+					"dataMode": "params",
+					"headerData": [],
+					"method": "GET",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"headers": "",
+					"pathVariables": {}
+				},
+				{
+					"id": "36e90d3b-dcc9-47ad-ae19-b0909be9c6b5",
+					"name": "traversal search",
+					"url": "http://127.0.0.1:8080/tgdb/search",
+					"description": "",
+					"data": [],
+					"dataMode": "raw",
+					"headerData": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"enabled": true
+						}
+					],
+					"method": "POST",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"rawModeData": "{\n  \"query\": {\n    \"queryString\" : \"@nodetype = 'airportType' and iataCode = 'JFK';\",\n    \"traversalCondition\" : \"@edgetype = 'routeType' and @isfromedge = 1 and (@edge.airlineID = 'AIRLINE2009') and @degree <= 3;\",\n    \"endCondition\" : \"@tonodetype = 'airportType' and @tonode.iataCode = 'SFO';\"\n  },\n  \"traversalDepth\" : \"3\"\n}",
+					"headers": "Content-Type: application/json\n",
+					"pathVariables": {}
+				},
+				{
+					"id": "50ab83e0-f56b-5899-f564-e94ccdfdcfae",
+					"name": "get node",
+					"url": "http://localhost:8080/tgdb/node/airportType/AIRPORT156",
+					"description": "",
+					"data": [],
+					"dataMode": "raw",
+					"headerData": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"enabled": true
+						}
+					],
+					"method": "GET",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"rawModeData": "",
+					"headers": "Content-Type: application/json\n",
+					"pathVariables": {}
+				},
+				{
+					"id": "564e1f62-f596-283f-b4c5-489e5ce3d644",
+					"name": "simple search",
+					"url": "http://127.0.0.1:8080/tgdb/search",
+					"description": "",
+					"data": [],
+					"dataMode": "raw",
+					"headerData": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"enabled": true
+						}
+					],
+					"method": "POST",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"rawModeData": "{\n  \"query\": {\n    \"queryString\" : \"@nodetype = 'airlineType' and (iataCode = 'DL');\"\n  },\n  \"traversalDepth\" : \"3\"\n}",
+					"headers": "Content-Type: application/json\n",
+					"pathVariables": {}
+				},
+				{
+					"id": "85abe7d9-e14d-1682-d19f-6f619f95434c",
+					"name": "create edge",
+					"url": "http://127.0.0.1:8080/tgdb/edge",
+					"description": "test insert node",
+					"data": [],
+					"dataMode": "raw",
+					"headerData": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"method": "POST",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"rawModeData": "{\n  \"source\": {\n    \"type\": \"airportType\",\n    \"key\" : {\n    \t\"airportID\": \"AIRPORT156\"\n    }\n  },\n  \"target\": {\n    \"type\": \"airportType\",\n    \"key\" : {\n    \t\"airportID\": \"AIRPORT3797\"\n    }\n  },\n  \"direction\" : 0,\n  \"properties\" : {\n    \"airlineID\": \"AIRLINE2009\"\n  }\n    \n}",
+					"headers": "Content-Type: application/json\n",
+					"pathVariables": {}
+				},
+				{
+					"id": "dac8670d-4358-e146-26e3-e22c4128aa69",
+					"name": "get all node types",
+					"url": "http://127.0.0.1:8080/tgdb/nodetypes",
+					"description": null,
+					"data": [],
+					"dataMode": "params",
+					"headerData": [],
+					"method": "GET",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"headers": "",
+					"pathVariables": {}
+				},
+				{
+					"id": "db682715-6380-3c0e-6221-641289025a58",
+					"name": "upsert node",
+					"url": "http://127.0.0.1:8080/tgdb/node/airportType",
+					"description": "test upsert node",
+					"data": [],
+					"dataMode": "raw",
+					"headerData": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"enabled": true
+						}
+					],
+					"method": "POST",
+					"pathVariableData": [],
+					"queryParams": [],
+					"auth": null,
+					"events": null,
+					"folder": null,
+					"currentHelper": null,
+					"helperAttributes": null,
+					"collectionId": "d03689cb-d5f2-f209-d0ca-3b43ad445bde",
+					"rawModeData": "{\n  \"properties\" : {\n    \"name\": \"John F Kennedy International Airport\",\n    \"iataCode\": \"JFK\",\n    \"country\": \"United States\",\n    \"city\": \"New York\",\n    \"icaoCode\": \"KJFK\",\n    \"airportID\": \"AIRPORT3797\"\n  }\n}",
+					"headers": "Content-Type: application/json\n",
+					"pathVariables": {}
+				}
+			]
+		}
+	],
+	"environments": [],
+	"headerPresets": [],
+	"globals": []
+}
